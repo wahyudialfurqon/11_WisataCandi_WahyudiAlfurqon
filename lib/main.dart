@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wisata_candi_wahyu/data/candi_data.dart';
 import 'package:wisata_candi_wahyu/screens/detail_screen.dart';
 import 'package:wisata_candi_wahyu/screens/profile_screen.dart';
+import 'package:wisata_candi_wahyu/screens/search_screen.dart';
 import 'package:wisata_candi_wahyu/screens/sig_in_screeen.dart';
 import 'package:wisata_candi_wahyu/screens/sign_up_screen.dart';
 
@@ -34,7 +35,8 @@ class MainApp extends StatelessWidget {
       // home: DetailScreen(candi: candiList[0]), 
       // home: const ProfileScreen(),
       // home: const SignInScreen(),
-      home: const SignUpScreen(),
+      // home: const SignUpScreen(),
+      home: const SearchScreen(),
     );
   }
 }
