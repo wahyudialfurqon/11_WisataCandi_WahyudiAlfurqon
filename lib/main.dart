@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wisata_candi_wahyu/data/candi_data.dart';
 import 'package:wisata_candi_wahyu/screens/detail_screen.dart';
+import 'package:wisata_candi_wahyu/screens/home_screen.dart';
 import 'package:wisata_candi_wahyu/screens/profile_screen.dart';
 import 'package:wisata_candi_wahyu/screens/search_screen.dart';
 import 'package:wisata_candi_wahyu/screens/sig_in_screeen.dart';
@@ -36,7 +37,8 @@ class MainApp extends StatelessWidget {
       // home: const ProfileScreen(),
       // home: const SignInScreen(),
       // home: const SignUpScreen(),
-      home: const SearchScreen(),
+      // home: const SearchScreen(),
+      home: const HomeScreen(),
     );
   }
 }
