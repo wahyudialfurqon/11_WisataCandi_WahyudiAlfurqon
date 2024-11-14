@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wisata_candi_wahyu/models/candi.dart';
+import 'package:wisata_candi_wahyu/screens/detail_screen.dart';
 
 class ItemCard extends StatelessWidget {
   //Deklarasi
@@ -9,10 +10,17 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //TODO: 6. Implementasi Route
-    
-    return Card(
-      //TODO: Tentukan Parameter
+  //TODO: 6. Implementasi Route
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DetailScreen(candi: candi),
+        ),
+      );
+    },
+    child: Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       margin: EdgeInsets.all(4),
       elevation: 1,
@@ -47,6 +55,7 @@ class ItemCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }
