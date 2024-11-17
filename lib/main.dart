@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:wisata_candi_wahyu/data/candi_data.dart';
-import 'package:wisata_candi_wahyu/screens/detail_screen.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wisata_candi_wahyu/screens/favorite_screen.dart';
 import 'package:wisata_candi_wahyu/screens/home_screen.dart';
 import 'package:wisata_candi_wahyu/screens/profile_screen.dart';
@@ -8,12 +8,23 @@ import 'package:wisata_candi_wahyu/screens/search_screen.dart';
 import 'package:wisata_candi_wahyu/screens/sig_in_screeen.dart';
 import 'package:wisata_candi_wahyu/screens/sign_up_screen.dart';
 
-void main() {
-  runApp(const MainApp());
+void main() async{
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  await Future.delayed(
+    Duration(seconds: 5),
+  );
+  FlutterNativeSplash.remove();
+  // Cek status login di SharedPreferences
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final bool isSignedIn = prefs.getBool('isSignedIn') ?? false;
+
+  runApp(MainApp(isSignedIn: isSignedIn));
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final bool isSignedIn;
+  const MainApp({super.key, required this.isSignedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +51,14 @@ class MainApp extends StatelessWidget {
       // home: const SignUpScreen(),
       // home: const SearchScreen(),
       // home: const HomeScreen(),
-      home: MainScreen(),
+      // home: const MainScreen(),
+      home: isSignedIn ? const MainScreen() : const SignInScreen(),
+      routes: {
+        '/homescreen': (context) => const HomeScreen(),
+        '/signin': (context) => const SignInScreen(),
+        '/signup': (context) => const SignUpScreen(),
+        '/mainscreen' : (context) => const MainScreen()
+      }
     );
   }
 }
@@ -58,7 +76,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _children = [
     const HomeScreen(),
     const SearchScreen(),
-    const FavoriteScreen(),
+    const FavoriteScreen(favorites: [],),
     const ProfileScreen(),
   ];
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -13,12 +14,49 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _usernameController = TextEditingController();
 
   final TextEditingController _passwordController = TextEditingController();
-
   String _errorText = '';
+  bool _isSigned = false;
+  bool _obscurePassword = true;
 
-  bool _isSignIN = false;
+  void  _signIn() async{
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String savedUsername = prefs.getString('username') ?? '';
+    final String savedPassword = prefs.getString('password') ?? '';
+    final String enteredUsername = _usernameController.text.trim();
+    final String enteredPassword = _passwordController.text.trim();
 
-  bool _obscurePassword = false;
+    if (enteredUsername == savedUsername && enteredPassword == savedPassword){
+      setState(() {
+        _errorText = '';
+        _isSigned = true;
+        prefs.setBool('isSignedIn', true);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_){
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_){
+        Navigator.pushReplacementNamed(context, '/mainscreen');
+      });
+    } else{
+      setState(() {
+        _errorText = 'Nama Pengguna atau sandi salah';
+      });
+    }
+
+    if(enteredUsername.isEmpty || enteredPassword.isEmpty) {
+      setState(() {
+        _errorText = 'nama pengguna dan kata sandi harus diisi!';
+      });
+      return;
+    }
+
+    if(savedUsername.isEmpty || savedPassword.isEmpty) {
+      setState(() {
+        _errorText = 'Pengguna Belum Terdaftar. Silahkan daftar terlebih dahulu';
+      });
+      return;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +108,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   // TODO: 7 Pasang ElevatedButton Sign in
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: _signIn,
                     child: const Text('Sign in'),
                   ),
                   // TODO: 8 Pasang ElevatedButton Register
@@ -87,7 +125,8 @@ class _SignInScreenState extends State<SignInScreen> {
                             decoration: TextDecoration.underline,
                             fontSize: 16,
                           ),
-                          recognizer: TapGestureRecognizer()..onTap = () {},
+                          recognizer: TapGestureRecognizer()..onTap = () {Navigator.pushNamed(context, '/signup');
+                          },
                         ),
                       ],
                     ),
