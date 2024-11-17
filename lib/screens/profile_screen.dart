@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wisata_candi_wahyu/widgets/profile_item_info.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -9,23 +10,54 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // TODO: 1. Deklarasikan variable yang dibutuhkan
+  // Deklarasikan variabel yang dibutuhkan
   bool isSignedIn = true;
-  String fullName = 'DummyName';
-  String userName = 'DummyUserName';
+  String fullName = '';
+  String userName = '';
   int favoriteCandiCount = 0;
 
-  //TODO: 5. Implemetasi Fungsi Sign in
-  void signIn(){
-    // setState(() {
-    //   isSignedIn = !isSignedIn;
-    // });
-    Navigator.pushNamed(context, '/sigin');
+  // Fungsi untuk Sign In
+  void signIn() {
+    Navigator.pushNamed(context, '/signin');
   }
-  //TODO: 6. Implemetasi Fungsi SIgn out
-   void signOut(){
+
+  // Fungsi untuk Sign Out
+  void logOut() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isSignedIn', false);  
+
+    // Navigasi ke halaman sign in
+    Navigator.pushReplacementNamed(context, '/signin');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();  // Mengecek status login saat pertama kali membuka layar
+    _loadProfileData();  // Memuat data profil pengguna
+  }
+
+  // Mengecek status login dari SharedPreferences
+  void _checkLoginStatus() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? signedIn = prefs.getBool('isSignedIn');
     setState(() {
-      isSignedIn = !isSignedIn;
+      isSignedIn = signedIn ?? false; // Menyimpan status login
+    });
+
+    // Jika tidak login, arahkan ke halaman SignIn
+    if (!isSignedIn) {
+      Navigator.pushReplacementNamed(context, '/signin');
+    }
+  }
+
+  // Memuat data profil pengguna dari SharedPreferences
+  void _loadProfileData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      fullName = prefs.getString('currentName') ?? 'Nama Tidak Ditemukan';
+      userName = prefs.getString('currentUsername') ?? 'Username Tidak Ditemukan';
+      favoriteCandiCount = prefs.getInt('favoriteCandiCount') ?? 0; // Memuat jumlah favorit
     });
   }
 
@@ -41,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               children: [
-                //TODO: 2. Buat bagian Profile Header yang berisi gambar profile
+                // Profile Header dengan gambar profil
                 Align(
                   alignment: Alignment.topCenter,
                   child: Padding(
@@ -62,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundImage: AssetImage('images/placeholder_image.png'),
                           ),
                         ),
-                        if(isSignedIn) 
+                        if (isSignedIn)
                           IconButton(
                             onPressed: () {},
                             icon: Icon(
@@ -74,93 +106,125 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-                //TODO: 3. Buat bagian ProfileInfo yang berisi infor Profile
-                const SizedBox(height: 20,),
-                Divider(color: Colors.deepPurple[100],),
-                const SizedBox(height: 4,),
+                const SizedBox(height: 20),
+                Divider(color: Colors.deepPurple[100]),
+                const SizedBox(height: 4),
                 Row(
                   children: [
-                    SizedBox(width: MediaQuery
-                    .of(context)
-                    .size
-                    .width/3,
-                    child: const Row(
-                      children: [
-                        Icon(
-                          Icons.lock,
-                          color: Colors.amber,
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 3,
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.lock,
+                            color: Colors.amber,
                           ),
-                        SizedBox(
-                          width: 8,
+                          SizedBox(
+                            width: 8,
                           ),
                           Text(
-                            'Pengguna',
+                            'Pengguna ',
                             style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold,),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      ': $userName',
-                      style: const TextStyle(fontSize: 18),
+                    Expanded(
+                      child: Text(
+                        ': $userName',
+                        style: const TextStyle(fontSize: 18),
+                      ),
                     ),
-                  )
-                ],
+                  ],
                 ),
-                const SizedBox(height: 4,),
-                Divider(color: Colors.deepPurple[100],),
-                const SizedBox(height: 14,),
-                // Row(
-                //   children: [
-                //     SizedBox(width: MediaQuery.of(context).size.width/3,
-                //     child: Row(
-                //       children: [
-                //         Icon(Icons.person, color: Colors.blue,),
-                //         SizedBox(
-                //           width: 8,
-                //           ),
-                //         Text(
-                //           'Nama',
-                //           style: TextStyle(
-                //             fontSize: 18, fontWeight: FontWeight.bold,),
-                //           ),
-                //         ],
-                //       )
-                //     ),
-                //     Expanded(
-                //       child: Text(
-                //         ': $fullName',
-                //         style: const TextStyle(fontSize: 18),
-                //       ),
-                //     ),
-                //     if(isSignedIn)const Icon(Icons.edit),
-                //   ],
-                // ),
-
-                ProfileItemInfo(icon: Icons.person, label: 'Name', value: fullName, iconColor: Colors.blue, showEditIcon: isSignedIn, onEditPressed: (){
-                  debugPrint('Icon Edit ditekan');
-                },
-              ),
-              SizedBox(height: 4,),
-              Divider(color: Colors.deepPurple[100],),
-              SizedBox(height: 4,),
-              ProfileItemInfo(icon: Icons.favorite, label: 'Favorit', value: favoriteCandiCount > 0 ? '$favoriteCandiCount' : ' ', iconColor: Colors.red),
-                //TODO: 4. Buat bagian ProfileActions yang berisi TextButton sign in/out
-                const SizedBox(height: 4,),
-                Divider(color: Colors.deepPurple[100],),
-                const SizedBox(height: 20,),
+                const SizedBox(height: 4),
+                Divider(color: Colors.deepPurple[100]),
+                const SizedBox(height: 4),
+                  Row(
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 3,
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.lock,
+                            color: Colors.amber,
+                          ),
+                          SizedBox(
+                            width: 8,
+                          ),
+                          Text(
+                            'Name ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        ': $fullName',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Divider(color: Colors.deepPurple[100]),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width / 3,
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.lock,
+                            color: Colors.amber,
+                          ),
+                          SizedBox(
+                            width: 8,
+                          ),
+                          Text(
+                            'Favorite ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Icon(
+                            Icons.favorite,
+                            color: Colors.red,  
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        favoriteCandiCount > 0
+                            ? ': $favoriteCandiCount'
+                            : ': No Favorites', 
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Divider(color: Colors.deepPurple[100]),
+                const SizedBox(height: 20),
                 isSignedIn
-                  ? TextButton(onPressed: signOut, child: const Text('Sign Out'),)
-                  : TextButton(onPressed: signIn, child: const Text('Sign in')),
+                    ? TextButton(onPressed: logOut, child: const Text('Log Out'))
+                    : TextButton(onPressed: signIn, child: const Text('Sign in')),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 }
-
-

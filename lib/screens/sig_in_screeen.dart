@@ -34,6 +34,11 @@ class _SignInScreenState extends State<SignInScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_){
         Navigator.of(context).popUntil((route) => route.isFirst);
       });
+        // Simpan nama dan username ke SharedPreferences untuk digunakan di profil
+      final String savedName = prefs.getString('fullname') ?? '';
+      prefs.setString('currentName', savedName);
+      prefs.setString('currentUsername', savedUsername);
+      
       WidgetsBinding.instance.addPostFrameCallback((_){
         Navigator.pushReplacementNamed(context, '/mainscreen');
       });
