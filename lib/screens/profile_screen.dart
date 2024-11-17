@@ -1,6 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wisata_candi_wahyu/widgets/profile_item_info.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,11 +12,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Deklarasikan variabel yang dibutuhkan
   bool isSignedIn = true;
   String fullName = '';
   String userName = '';
   int favoriteCandiCount = 0;
+  File? image;
 
   // Fungsi untuk Sign In
   void signIn() {
@@ -28,6 +30,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // Navigasi ke halaman sign in
     Navigator.pushReplacementNamed(context, '/signin');
+  }
+
+  // Fungsi untuk mengambil gambar
+  Future<void> selectImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? selectedImage = await picker.pickImage(source: ImageSource.camera);
+    
+    if (selectedImage != null) {
+      setState(() {
+        image = File(selectedImage.path); 
+        print("Selected image path: ${selectedImage.path}");  // Set the image file to the state
+      });
+    }
+  }
+
+  // Fungsi untuk mengedit user name
+  void _editUserName() async {
+    TextEditingController controller = TextEditingController(text: userName);
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit User Name'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'Enter new user name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () async {
+                setState(() {
+                  userName = controller.text;
+                });
+
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setString('currentUsername', userName); // Simpan username baru
+
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Fungsi untuk mengedit full name
+  void _editFullName() async {
+    TextEditingController controller = TextEditingController(text: fullName);
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Full Name'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(labelText: 'Enter new full name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () async {
+                setState(() {
+                  fullName = controller.text;
+                });
+
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
+                await prefs.setString('currentName', fullName); // Simpan nama lengkap baru
+
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -89,14 +182,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             shape: BoxShape.circle,
                           ),
-                          child: const CircleAvatar(
+                          child: CircleAvatar(
                             radius: 50,
-                            backgroundImage: AssetImage('images/placeholder_image.png'),
+                            backgroundImage: image == null
+                                ? const AssetImage('images/placeholder_image.png')
+                                : FileImage(image!) as ImageProvider,
                           ),
                         ),
                         if (isSignedIn)
                           IconButton(
-                            onPressed: () {},
+                            onPressed: selectImage,
                             icon: Icon(
                               Icons.camera_alt,
                               color: Colors.deepPurple[50],
@@ -109,6 +204,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 4),
+
+                // Baris UserName
                 Row(
                   children: [
                     SizedBox(
@@ -123,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             width: 8,
                           ),
                           Text(
-                            'Pengguna ',
+                            'User Name ',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -138,12 +235,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(fontSize: 18),
                       ),
                     ),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.deepPurple),
+                      onPressed: _editUserName, // Fungsi untuk mengedit nama pengguna
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 4),
-                  Row(
+
+                // Baris Full Name
+                Row(
                   children: [
                     SizedBox(
                       width: MediaQuery.of(context).size.width / 3,
@@ -172,11 +275,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: const TextStyle(fontSize: 18),
                       ),
                     ),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.deepPurple),
+                      onPressed: _editFullName, // Fungsi untuk mengedit nama lengkap
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Divider(color: Colors.deepPurple[100]),
                 const SizedBox(height: 4),
+
+                // Baris Favorite
                 Row(
                   children: [
                     SizedBox(
