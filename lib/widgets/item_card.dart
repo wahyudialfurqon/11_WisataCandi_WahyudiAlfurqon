@@ -38,7 +38,7 @@ class ItemCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(
+            padding: const EdgeInsets.only(
               left: 16,
               top: 8,),
               child: Text(candi.name,

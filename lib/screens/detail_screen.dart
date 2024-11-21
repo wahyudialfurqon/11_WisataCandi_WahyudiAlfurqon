@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wisata_candi_wahyu/models/candi.dart';
 
@@ -21,37 +21,36 @@ class _DetailScreenState extends State<DetailScreen> {
     _checkSignStatus();
     _loadFavoriteStatus();
   }
-  
-  void _checkSignStatus() async {
+
+  Future<void> _checkSignStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool status = prefs.getBool('isSignedIn') ?? false;
     setState(() {
-      isSignedIn = status;
+      isSignedIn = prefs.getBool('isSignedIn') ?? false;
     });
   }
 
-  void _loadFavoriteStatus() async {
+  Future<void> _loadFavoriteStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool favorite = prefs.getBool('favorite_${widget.candi.name}') ?? false;
+    String key = 'favorite_${widget.candi.name.replaceAll(' ', '_')}';
     setState(() {
-      isFavorite = favorite;
+      isFavorite = prefs.getBool(key) ?? false;
     });
   }
 
-    Future<void> _togglefavorite() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if(!isSignedIn){
-      WidgetsBinding.instance.addPostFrameCallback((_){
+  Future<void> _toggleFavorite() async {
+    if (!isSignedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/signin');
       });
       return;
     }
-    bool favoriteStatus = !isFavorite;
-    await prefs.setBool('favorite_${widget.candi.name}', favoriteStatus);
 
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String key = 'favorite_${widget.candi.name.replaceAll(' ', '_')}';
     setState(() {
-      isFavorite = favoriteStatus;
+      isFavorite = !isFavorite;
     });
+    await prefs.setBool(key, isFavorite);
   }
 
   @override
@@ -107,13 +106,13 @@ class _DetailScreenState extends State<DetailScreen> {
                             fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
-                        onPressed: () {
-                          _togglefavorite();
-                        },
-                        icon: Icon(isSignedIn && isFavorite ?
-                        Icons.favorite : Icons.favorite_border,
-                        color: isSignedIn && isFavorite? Colors.red : null,
-                      ),
+                        icon: Icon(
+                          isSignedIn && isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: isSignedIn && isFavorite ? Colors.red : null,
+                        ),
+                        onPressed: _toggleFavorite,
                       ),
                     ],
                   ),

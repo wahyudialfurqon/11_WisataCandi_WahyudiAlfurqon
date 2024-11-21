@@ -12,7 +12,7 @@ void main() async{
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await Future.delayed(
-    Duration(seconds: 5),
+    Duration(seconds: 2),
   );
   FlutterNativeSplash.remove();
   // Cek status login di SharedPreferences
@@ -76,7 +76,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _children = [
     const HomeScreen(),
     const SearchScreen(),
-    const FavoriteScreen(favorites: [],),
+    const FavoriteScreen(),
     const ProfileScreen(),
   ];
 
