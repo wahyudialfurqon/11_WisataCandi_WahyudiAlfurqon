@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wisata_candi_wahyu/screens/favorite_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -45,6 +46,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+   // Fungsi untuk menyimpan jumlah favorite
+  Future<void> _saveFavoriteCount() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('favoriteCandiCount', favoriteCandiCount);
+  }
+  
   // Fungsi untuk mengedit user name
   void _editUserName() async {
     TextEditingController controller = TextEditingController(text: userName);
@@ -150,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       fullName = prefs.getString('currentName') ?? 'Nama Tidak Ditemukan';
       userName = prefs.getString('currentUsername') ?? 'Username Tidak Ditemukan';
-      favoriteCandiCount = prefs.getInt('favoriteCandiCount') ?? 0; // Memuat jumlah favorit
+      favoriteCandiCount = prefs.getInt('favoriteCandiCount') ?? 0; 
     });
   }
 

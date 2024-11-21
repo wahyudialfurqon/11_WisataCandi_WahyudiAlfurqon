@@ -36,7 +36,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     setState(() {
       favorites = tempFavorites;
     });
-  }
+
+     await prefs.setInt('favoriteCandiCount', tempFavorites.length);
+  }  
 
   @override
   Widget build(BuildContext context) {
