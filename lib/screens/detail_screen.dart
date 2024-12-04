@@ -60,16 +60,19 @@ class _DetailScreenState extends State<DetailScreen> {
         child: Column(
           children: [
             Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      widget.candi.imageAsset,
-                      width: double.infinity,
-                      height: 300,
-                      fit: BoxFit.cover,
+             children: [
+                Hero(
+                  tag: widget.candi.imageAsset,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        widget.candi.imageAsset,
+                        width: double.infinity,
+                        height: 300,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
