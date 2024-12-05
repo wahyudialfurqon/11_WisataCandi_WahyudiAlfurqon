@@ -8,6 +8,7 @@ import 'package:wisata_candi_wahyu/screens/search_screen.dart';
 import 'package:wisata_candi_wahyu/screens/sig_in_screeen.dart';
 import 'package:wisata_candi_wahyu/screens/sign_up_screen.dart';
 
+
 void main() async{
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);

@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wisata_candi_wahyu/screens/favorite_screen.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,19 +20,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int favoriteCandiCount = 0;
   File? image;
 
-  // Fungsi untuk Sign In
+   // Fungsi untuk Sign In
   void signIn() {
     Navigator.pushNamed(context, '/signin');
   }
 
-  // Fungsi untuk Sign Out
-  void logOut() async {
+  // Fungsi untuk Logout, menghapus data yang tersimpan
+  Future<void> logOut() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isSignedIn', false);  
+    await prefs.clear(); // Clear all stored data
 
-    // Navigasi ke halaman sign in
     Navigator.pushReplacementNamed(context, '/signin');
   }
+
 
   // Fungsi untuk mengambil gambar
   Future<void> selectImage() async {
@@ -53,8 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
   
   // Fungsi untuk mengedit user name
-  void _editUserName() async {
-    TextEditingController controller = TextEditingController(text: userName);
+  Future<void> _editUserName() async {
+    final TextEditingController controller = TextEditingController(text: userName);
 
     await showDialog(
       context: context,
@@ -65,24 +66,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: controller,
             decoration: const InputDecoration(labelText: 'Enter new user name'),
           ),
-          actions: <Widget>[
+          actions: [
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: const Text('Save'),
               onPressed: () async {
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
                 setState(() {
                   userName = controller.text;
                 });
-
-                final SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.setString('currentUsername', userName); // Simpan username baru
-
-                Navigator.of(context).pop(); // Close the dialog
+                await prefs.setString('currentUsername', userName);
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -91,9 +88,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+   // Fungsi untuk mengenkripsi teks
+  String encryptText(String text) {
+    return base64.encode(utf8.encode(text));
+  }
+
+  // Fungsi untuk mendekripsi teks
+  String decryptText(String text) {
+    return utf8.decode(base64.decode(text));
+  }
+
   // Fungsi untuk mengedit full name
-  void _editFullName() async {
-    TextEditingController controller = TextEditingController(text: fullName);
+  Future<void> _editFullName() async {
+    final TextEditingController controller = TextEditingController(text: fullName);
 
     await showDialog(
       context: context,
@@ -104,24 +111,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: controller,
             decoration: const InputDecoration(labelText: 'Enter new full name'),
           ),
-          actions: <Widget>[
+          actions: [
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: const Text('Save'),
               onPressed: () async {
+                final String newName = controller.text;
+                final SharedPreferences prefs = await SharedPreferences.getInstance();
+                final String encryptedName = encryptText(newName);
+
                 setState(() {
-                  fullName = controller.text;
+                  fullName = newName;
                 });
 
-                final SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.setString('currentName', fullName); // Simpan nama lengkap baru
-
-                Navigator.of(context).pop(); // Close the dialog
+                await prefs.setString('currentName', encryptedName);
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -137,28 +144,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadProfileData();  // Memuat data profil pengguna
   }
 
-  // Mengecek status login dari SharedPreferences
-  void _checkLoginStatus() async {
+    // Mengecek status login dari SharedPreferences
+  Future<void> _checkLoginStatus() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? signedIn = prefs.getBool('isSignedIn');
+    final bool? signedIn = prefs.getBool('isSignedIn');
     setState(() {
-      isSignedIn = signedIn ?? false; // Menyimpan status login
+      isSignedIn = signedIn ?? false;
     });
-
-    // Jika tidak login, arahkan ke halaman SignIn
     if (!isSignedIn) {
       Navigator.pushReplacementNamed(context, '/signin');
     }
   }
+Future<Map<String, String>> _retrieveAndDecryptDataFromPrefs(
+  SharedPreferences sharedPreferences,
+) async {
+  try {
+    final encryptedUsername = sharedPreferences.getString('username');
+    final encryptedPassword = sharedPreferences.getString('fullname');
+    final keyString = sharedPreferences.getString('key');
+    final ivString = sharedPreferences.getString('iv');
 
-  // Memuat data profil pengguna dari SharedPreferences
-  void _loadProfileData() async {
+    if (encryptedUsername == null ||
+        encryptedPassword == null ||
+        keyString == null ||
+        ivString == null) {
+      throw Exception('Missing credentials in SharedPreferences.');
+    }
+
+    final encrypt.Key key = encrypt.Key.fromBase64(keyString);
+    final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
+    final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+    final decryptedUsername = encrypter.decrypt64(encryptedUsername, iv: iv);
+    final decryptedPassword = encrypter.decrypt64(encryptedPassword, iv: iv);
+
+    return {'username': decryptedUsername, 'fullname': decryptedPassword};
+  } catch (e) {
+    print('Decryption failed: $e');
+    return {};
+  }
+}
+   // Memuat data profil pengguna dari SharedPreferences
+  Future<void> _loadProfileData() async {
+     final prefs = await SharedPreferences.getInstance();
+     final data = await _retrieveAndDecryptDataFromPrefs(prefs);
+
+      if (data.isNotEmpty) {
+        final decryptedUsername = data['username'];
+        final decryptedPassword = data['fullname'];
+        setState(() {
+          fullName = decryptedPassword ?? "Fullname tidak ditemukan.";
+          userName = decryptedUsername ?? "Username tidak ditemukan."; // Ambil username
+          favoriteCandiCount = prefs.getInt('favoriteCandiCount') ?? 0; // Ambil count favorite
+          });
+      }
+  }
+
+  // Fungsi untuk menyimpan data saat user mendaftar
+  Future<void> saveProfileData(String name, String username) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      fullName = prefs.getString('currentName') ?? 'Nama Tidak Ditemukan';
-      userName = prefs.getString('currentUsername') ?? 'Username Tidak Ditemukan';
-      favoriteCandiCount = prefs.getInt('favoriteCandiCount') ?? 0; 
-    });
+    await prefs.setString('currentName', encryptText(name)); // Simpan nama lengkap terenkripsi
+    await prefs.setString('currentUsername', username); // Simpan username
+    await prefs.setBool('isSignedIn', true); // Set status login
   }
 
   @override

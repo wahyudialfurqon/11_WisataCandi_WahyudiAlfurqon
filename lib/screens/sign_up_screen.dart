@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -23,28 +24,66 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool _obscurePassword = true;
 
-  void _signUp() async{
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String name = _nameController.text.trim();
-    final String username = _usernameController.text.trim();
-    final String password = _passwordController.text.trim();
+void _signUp() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final String name = _nameController.text.trim();
+  final String username = _usernameController.text.trim();
+  final String password = _passwordController.text.trim();
 
-    if(password.length < 8 ||
-    !password.contains(RegExp(r'[A-Z]')) || 
-    !password.contains(RegExp(r'[a-z]')) || 
-    !password.contains(RegExp(r'[0-9]')) || 
-    !password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_]'))){
-      setState(() {
-        _errorText = 'Minimal 8 karakter, Kombinasi [A - Z], [a - z], [0 - 9], [!@#\$%^&*(),.?:{}|<>_]';
-      });
-      return;
-    }
-    prefs.setString('fullname', name);
-    prefs.setString('username', username);
-    prefs.setString('password', password);
-
-    Navigator.pushReplacementNamed(context, '/signin');
+  // Validasi input
+  if (name.isEmpty || username.isEmpty || password.isEmpty) {
+    setState(() {
+      _errorText = 'Semua kolom harus diisi.';
+    });
+    return;
   }
+
+  if (password.length < 8 ||
+      !password.contains(RegExp(r'[A-Z]')) || 
+      !password.contains(RegExp(r'[a-z]')) || 
+      !password.contains(RegExp(r'[0-9]')) || 
+      !password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_]'))) {
+    setState(() {
+      _errorText = 'Minimal 8 karakter, Kombinasi [A-Z], [a-z], [0-9], [!@#-%^&*(),.?":{}|<>_].';
+    });
+    return;
+  }
+
+  try {
+    final encrypt.Key key = encrypt.Key.fromLength(32); // Tetap random, tetapi simpan.
+    final encrypt.IV iv = encrypt.IV.fromLength(16);
+
+    final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+    final encryptedName = encrypter.encrypt(name, iv: iv);
+    final encryptedUsername = encrypter.encrypt(username, iv: iv);
+    final encryptedPassword = encrypter.encrypt(password, iv: iv);
+
+    // Simpan data yang terenkripsi dan kunci ke SharedPreferences
+    await prefs.setString('fullname', encryptedName.base64);
+    await prefs.setString('username', encryptedUsername.base64);
+    await prefs.setString('password', encryptedPassword.base64);
+    await prefs.setString('key', key.base64);
+    await prefs.setString('iv', iv.base64);
+
+    print('Registration successful!');
+    print('Encrypted Data:');
+    print('Name: ${encryptedName.base64}');
+    print('Username: ${encryptedUsername.base64}');
+    print('Password: ${encryptedPassword.base64}');
+    print('Key: ${key.base64}');
+    print('IV: ${iv.base64}');
+
+    // Navigasi ke halaman login
+    Navigator.pushReplacementNamed(context, '/signin');
+  } catch (e) {
+    print('Encryption or saving failed: $e');
+    setState(() {
+      _errorText = 'Terjadi kesalahan saat proses registrasi.';
+    });
+  }
+}
+
   @override
   void dispose(){
     _usernameController.dispose();
